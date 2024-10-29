@@ -17,8 +17,8 @@ COPY . .
 COPY go.mod go.sum ./
 COPY config/ config/
 RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -ldflags "-w -s" -a -o manager cmd/web/main.go
-
+RUN ls -la /opt
 FROM alpine AS prod
-COPY --from=builder /manager /opt/manager
+COPY --from=builder /opt/manager /opt/manager
 EXPOSE 20201
 ENTRYPOINT ["/opt/manager"]
