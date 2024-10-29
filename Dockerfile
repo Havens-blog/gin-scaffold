@@ -10,15 +10,15 @@ WORKDIR /opt
 COPY vendor/ vendor/
 
 # Copy the go source
-COPY config/ config/
 COPY public/ public/
 COPY storage/ storage/
 COPY cmd/web/main.go cmd/web/main.go
 COPY . .
 COPY go.mod go.sum ./
+COPY config/ config/
 RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -ldflags "-w -s" -a -o manager cmd/web/main.go
 
 FROM alpine AS prod
 COPY --from=builder /opt/manager .
-EXPOSE 8002
+EXPOSE 20201
 ENTRYPOINT ["/manager"]
