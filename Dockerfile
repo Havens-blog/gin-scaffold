@@ -21,4 +21,4 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -ldflags
 FROM alpine AS prod
 COPY --from=builder /opt/manager .
 EXPOSE 20201
-ENTRYPOINT ["/manager"]
+ENTRYPOINT ["/opt/manager"]
