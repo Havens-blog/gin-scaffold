@@ -10,12 +10,12 @@ WORKDIR /opt
 COPY . .
 
 RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -ldflags "-w -s" -a -o manager cmd/web/main.go
-RUN ls -la /opt
+
 FROM alpine AS prod
 WORKDIR /opt
 COPY public/ public/
-COPY storage/ storage/
 COPY config/ config/
+RUN mkdir -p storage/logs storage/app
 COPY --from=builder /opt/manager /opt/manager
 EXPOSE 20201
 ENTRYPOINT ["/opt/manager"]
