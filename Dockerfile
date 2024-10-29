@@ -14,7 +14,7 @@ COPY config/ config/
 COPY public/ public/
 COPY storage/ storage/
 COPY cmd/web/main.go cmd/web/main.go
-
+COPY . .
 RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -ldflags "-w -s" -a -o manager cmd/web/main.go
 
 FROM alpine AS prod
