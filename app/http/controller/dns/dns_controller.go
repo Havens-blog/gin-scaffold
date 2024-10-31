@@ -1,7 +1,6 @@
 package dns
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"goskeleton/app/global/consts"
 	"goskeleton/app/global/variable"
@@ -10,7 +9,6 @@ import (
 	"regexp"
 	"strings"
 	"yunion.io/x/cloudmux/pkg/cloudprovider"
-	"yunion.io/x/cloudmux/pkg/multicloud/aliyun"
 )
 
 type SDomainRecordListOptions struct {
@@ -28,23 +26,13 @@ const (
 	DnsRecordFail    string = "域名解析添加失败"
 )
 
-var region *aliyun.SRegion
-
-func init() {
-	//初始化
-	options := &BaseOptions{
-		Debug:     false,
-		AccessKey: "LTAI5t7rVp7kVYP8CB5nd4Ym",
-		Secret:    "0vDa8AebxtaWv6KcHHuI0dIBsiiuam",
-		RegionId:  "cn-shenzhen",
-	}
-	region, _ = newClient(options)
-}
-
 type DnsRegister struct {
 }
 
 func (d *DnsRegister) Register(context *gin.Context) {
+	if variable.AliyunDnsClient == nil {
+		variable.ZapLog.Sugar().Error("aliyun dns凭证初始化失败")
+	}
 	dns_content := context.GetString(consts.ValidatorPrefix + "dns_content")
 	single_record := context.GetBool(consts.ValidatorPrefix + "single_record")
 	//dns_content 是一个三段式字符串结构 “域名 解析值 类型”
@@ -84,7 +72,7 @@ func (d *DnsRegister) Register(context *gin.Context) {
 			PageNumber: 1,
 			PageSize:   20,
 		}
-		srecords, e := region.GetClient().DescribeSubDomainRecords(opt1.DOMAINNAME, opt1.PageNumber, opt1.PageSize)
+		srecords, e := variable.AliyunDnsClient.GetClient().DescribeSubDomainRecords(opt1.DOMAINNAME, opt1.PageNumber, opt1.PageSize)
 		if e != nil {
 			myMap[fullDomain] = "获取域名解析失败,检查域名是否存在当前阿里云账号"
 			continue
@@ -111,7 +99,7 @@ func (d *DnsRegister) Register(context *gin.Context) {
 		opts.PolicyType = cloudprovider.TDnsPolicyType(args.PolicyType)
 		if srecords.TotalCount == 0 || single_record {
 
-			recordId, err := region.GetClient().AddDomainRecord(args.DOMAINNAME, opts)
+			recordId, err := variable.AliyunDnsClient.GetClient().AddDomainRecord(args.DOMAINNAME, opts)
 			if err != nil {
 				myMap[fullDomain] = DnsRecordFail
 				variable.ZapLog.Sugar().Error(e)
@@ -131,16 +119,6 @@ func isDomain(domain string) bool {
 	return domainRegex.MatchString(domain)
 }
 
-type BaseOptions struct {
-	Debug      bool   `help:"debug mode"`
-	CloudEnv   string `help:"Cloud environment" default:"$ALIYUN_CLOUD_ENV" choices:"InternationalCloud|FinanceCloud" metavar:"ALIYUN_CLOUD_ENV"`
-	AccessKey  string `help:"Access key" default:"$ALIYUN_ACCESS_KEY" metavar:"ALIYUN_ACCESS_KEY"`
-	Secret     string `help:"Secret" default:"$ALIYUN_SECRET" metavar:"ALIYUN_SECRET"`
-	RegionId   string `help:"RegionId" default:"$ALIYUN_REGION" metavar:"ALIYUN_REGION"`
-	AccountId  string `help:"AccountId" default:"$ALIYUN_ACCOUNT_ID" metavar:"ALIYUN_ACCOUNT_ID"`
-	SUBCOMMAND string `help:"aliyuncli subcommand" subcommand:"true"`
-}
-
 type DomainRecordCreateOptions struct {
 	DOMAINNAME  string
 	NAME        string
@@ -149,34 +127,6 @@ type DomainRecordCreateOptions struct {
 	TYPE        string `help:"dns type"`
 	PolicyType  string `help:"PolicyType"`
 	PolicyValue string
-}
-
-func newClient(options *BaseOptions) (*aliyun.SRegion, error) {
-	if len(options.AccessKey) == 0 {
-		return nil, fmt.Errorf("Missing accessKey")
-	}
-
-	if len(options.Secret) == 0 {
-		return nil, fmt.Errorf("Missing secret")
-	}
-
-	cli, err := aliyun.NewAliyunClient(
-		aliyun.NewAliyunClientConfig(
-			options.CloudEnv,
-			options.AccessKey,
-			options.Secret,
-		),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	region := cli.GetRegion(options.RegionId)
-	if region == nil {
-		return nil, fmt.Errorf("No such region %s", options.RegionId)
-	}
-
-	return region, nil
 }
 
 func ExtractSubdomains(fullDomain string) ([]string, string) {

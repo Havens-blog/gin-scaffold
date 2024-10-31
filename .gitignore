@@ -5,3 +5,6 @@
 /storage/uploaded/*
 /public/storage
 /cmd/web/tmp
+cmd/web/tmp/runner-build.exe
+*.exe
+cmd/web/tmp/runner-build.exe

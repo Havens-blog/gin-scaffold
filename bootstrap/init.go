@@ -8,6 +8,7 @@ import (
 	"goskeleton/app/service/sys_log_hook"
 	"goskeleton/app/utils/casbin_v2"
 	"goskeleton/app/utils/gorm_v2"
+	"goskeleton/app/utils/public_cloud/aliyun"
 	"goskeleton/app/utils/snow_flake"
 	"goskeleton/app/utils/validator_translation"
 	"goskeleton/app/utils/websocket/core"
@@ -112,5 +113,17 @@ func init() {
 	//10.全局注册 validator 错误翻译器,zh 代表中文，en 代表英语
 	if err := validator_translation.InitTrans("zh"); err != nil {
 		log.Fatal(my_errors.ErrorsValidatorTransInitFail + err.Error())
+	}
+	// 11.初始化阿里云Dns客户端
+	if variable.ConfigYml.GetInt("PublicCloud.Aliyun.Dns.IsInit") == 1 {
+		//初始化
+		options := &aliyun.BaseOptions{
+			Debug:     false,
+			AccessKey: variable.ConfigYml.GetString("PublicCloud.Aliyun.Dns.AccessKeyId"),
+			Secret:    variable.ConfigYml.GetString("PublicCloud.Aliyun.Dns.AccessKeySecret"),
+			RegionId:  variable.ConfigYml.GetString("PublicCloud.Aliyun.Dns.Regionid"),
+		}
+		region, _ := aliyun.NewClient(options)
+		variable.AliyunDnsClient = region
 	}
 }

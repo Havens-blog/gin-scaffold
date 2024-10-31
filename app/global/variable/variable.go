@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"yunion.io/x/cloudmux/pkg/multicloud/aliyun"
 )
 
 // ginskeleton 封装的全局变量全部支持并发安全，请放心使用即可
@@ -44,7 +45,7 @@ var (
 	Enforcer *casbin.SyncedEnforcer
 
 	//  用户自行定义其他全局变量 ↓
-
+	AliyunDnsClient *aliyun.SRegion
 )
 
 func init() {
