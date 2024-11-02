@@ -1,11 +1,13 @@
 package bootstrap
 
 import (
+	"fmt"
 	_ "goskeleton/app/core/destroy" // 监听程序退出信号，用于资源的释放
 	"goskeleton/app/global/my_errors"
 	"goskeleton/app/global/variable"
 	"goskeleton/app/http/validator/common/register_validator"
 	"goskeleton/app/service/sys_log_hook"
+	"goskeleton/app/utils/aes_encrypt"
 	"goskeleton/app/utils/casbin_v2"
 	"goskeleton/app/utils/gorm_v2"
 	"goskeleton/app/utils/public_cloud/aliyun"
@@ -116,11 +118,22 @@ func init() {
 	}
 	// 11.初始化阿里云Dns客户端
 	if variable.ConfigYml.GetInt("PublicCloud.Aliyun.Dns.IsInit") == 1 {
+		ak, err := aes_encrypt.Decrypt(variable.ConfigYml.GetString("Encrypt.Key"), variable.ConfigYml.GetString("PublicCloud.Aliyun.Dns.AccessKeyId"))
+		if err != nil {
+			fmt.Println("Error decrypting:", err)
+			return
+		}
+		sk, err := aes_encrypt.Decrypt(variable.ConfigYml.GetString("Encrypt.Key"), variable.ConfigYml.GetString("PublicCloud.Aliyun.Dns.AccessKeySecret"))
+		if err != nil {
+			fmt.Println("Error decrypting:", err)
+			return
+		}
+		//variable.ZapLog.Info("Aliyun Dns Client Init Success", zap.String("ak", ak), zap.String("sk", sk))
 		//初始化
 		options := &aliyun.BaseOptions{
 			Debug:     false,
-			AccessKey: variable.ConfigYml.GetString("PublicCloud.Aliyun.Dns.AccessKeyId"),
-			Secret:    variable.ConfigYml.GetString("PublicCloud.Aliyun.Dns.AccessKeySecret"),
+			AccessKey: ak,
+			Secret:    sk,
 			RegionId:  variable.ConfigYml.GetString("PublicCloud.Aliyun.Dns.Regionid"),
 		}
 		region, _ := aliyun.NewClient(options)

@@ -7,4 +7,4 @@
 /cmd/web/tmp
 cmd/web/tmp/runner-build.exe
 *.exe
-cmd/web/tmp/runner-build.exe
+/config/config.yml
